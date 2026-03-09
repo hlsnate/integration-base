@@ -10,9 +10,6 @@ on:
         required: false
         type: string
         default: "both"
-    secrets:
-      aws_role_arn:
-        required: true
 
 jobs:
   deploy:
@@ -33,17 +30,20 @@ jobs:
           VERSION=$(grep -o 'integrations-base/v[0-9]*\.[0-9]*\.[0-9]*' deno.jsonc | head -1 | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Download base template.yml from integrations-base
-        run: |
-          curl -fsSL \
-            "https://raw.githubusercontent.com/hlsnate/integrations-base/${{ steps.core_version.outputs.version }}/cloudformation/template.yml" \
-            -o template.yml
-          echo "Using integrations-base ${{ steps.core_version.outputs.version }}"
+      - name: Checkout integrations-base
+        uses: actions/checkout@v4
+        with:
+          repository: hls/integrations-base
+          ref: ${{ steps.core_version.outputs.version }}
+          path: integrations-base
+
+      - name: Copy base template.yml
+        run: cp integrations-base/cloudformation/template.yml template.yml
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.aws_role_arn }}
+          role-to-assume: ${{ vars.aws_role_arn }}
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Setup SAM CLI
