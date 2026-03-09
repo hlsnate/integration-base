@@ -15,6 +15,12 @@ Parameters:
     AllowedValues: [webhook, schedule, both]
     Description: "How to trigger the Lambda function"
 
+  LogLevel:
+    Type: String
+    Default: "info"
+    AllowedValues: [trace, debug, info, warn, error, silent]
+    Description: "Lambda LOG_LEVEL environment variable"
+
   ScheduleEnabled:
     Type: String
     Default: "ENABLED"
@@ -202,6 +208,7 @@ Resources:
           ENVIRONMENT: !Ref Environment
           SERVICE_NAME: !Ref AWS::StackName
           TRIGGER_TYPE: !Ref TriggerType
+          LOG_LEVEL: !Ref LogLevel
     Metadata:
       Dockerfile: Dockerfile
       DockerContext: .

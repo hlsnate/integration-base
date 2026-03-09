@@ -59,6 +59,7 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           TRIGGER_TYPE: ${{ inputs.trigger_type }}
           SCHEDULE: ${{ vars.SCHEDULE }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
           ALERT_EMAIL_OVERRIDE: ${{ vars.ALERT_EMAIL_OVERRIDE }}
           SCHEDULE_EVAL_PERIODS: ${{ vars.SCHEDULE_EVAL_PERIODS }}
           SCHEDULE_ALARM_WINDOW: ${{ vars.SCHEDULE_ALARM_WINDOW }}
@@ -83,6 +84,8 @@ jobs:
           [ -n "$ALERT_EMAIL_OVERRIDE" ]  && PARAM_OVERRIDES+=("AlertEmailOverride=$ALERT_EMAIL_OVERRIDE")
           [ -n "$SCHEDULE_EVAL_PERIODS" ] && PARAM_OVERRIDES+=("ScheduleEvaluationPeriods=$SCHEDULE_EVAL_PERIODS")
           [ -n "$SCHEDULE_ALARM_WINDOW" ] && PARAM_OVERRIDES+=("ScheduleAlarmWindow=$SCHEDULE_ALARM_WINDOW")
+          [ -n "$LOG_LEVEL" ] && PARAM_OVERRIDES+=("LogLevel=$LOG_LEVEL")
+
 
           [ -n "$OPTIONAL_ALARM1_FILTER" ]              && PARAM_OVERRIDES+=("OptionalAlarm1FilterPattern='$OPTIONAL_ALARM1_FILTER'")
           [ -n "$OPTIONAL_ALARM1_WINDOW" ]              && PARAM_OVERRIDES+=("OptionalAlarm1Window=$OPTIONAL_ALARM1_WINDOW")
