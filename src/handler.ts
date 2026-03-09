@@ -1,10 +1,6 @@
 import { addLogContext, useCustomConsoleLogger } from "./util/logger.ts";
 import type { LambdaHandler } from "./lambda-types.ts";
-
-export const DefaultErrorResponse = {
-  statusCode: 500,
-  body: JSON.stringify({ error: "Internal server error" }),
-};
+import { DefaultErrorResponse } from "./util/lambda.ts";
 
 export interface HandlerOptions {
   webhook?: LambdaHandler;

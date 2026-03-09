@@ -15,4 +15,5 @@ export type {
   LambdaHandler,
   ScheduledJobResponse,
 } from "./lambda-types.ts";
-export { createLambdaHandler, DefaultErrorResponse } from "./handler.ts";
+export { DefaultErrorResponse, processEvents } from "./util/lambda.ts";
+export { createLambdaHandler } from "./handler.ts";
