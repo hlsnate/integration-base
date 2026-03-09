@@ -4,7 +4,7 @@
     "jsr:@std/crypto@1.0.5": "1.0.5",
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/path@1.1.4": "1.1.4",
-    "npm:@aws-sdk/client-ssm@3.1000.0": "3.1000.0",
+    "npm:@aws-sdk/client-ssm@3.1001.0": "3.1001.0",
     "npm:@azure/msal-node@5.0.6": "5.0.6",
     "npm:loglevel@1.9.2": "1.9.2",
     "npm:p-throttle@8.1.0": "8.1.0",
@@ -59,8 +59,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/client-ssm@3.1000.0": {
-      "integrity": "sha512-pqxpsNEs2UTcyyzDdSXl9oTmLeiFQVQq7N2UEEGP5ItBdBnULrBN++9t/DhNfOZNENddDNJcuCslvoYKJ7wVcQ==",
+    "@aws-sdk/client-ssm@3.1001.0": {
+      "integrity": "sha512-WnEFtzczBF1f+hNvnmucbccYeGfHXnQOaARnI4c2WYGzcCN0SF/R7B4Xl2V1DpsLxtldx5dkX2hwIc40rYk1Rg==",
       "dependencies": [
         "@aws-crypto/sha256-browser",
         "@aws-crypto/sha256-js",
@@ -104,8 +104,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/core@3.973.15": {
-      "integrity": "sha512-AlC0oQ1/mdJ8vCIqu524j5RB7M8i8E24bbkZmya1CuiQxkY7SdIZAyw7NDNMGaNINQFq/8oGRMX0HeOfCVsl/A==",
+    "@aws-sdk/core@3.973.16": {
+      "integrity": "sha512-Nasoyb5K4jfvncTKQyA13q55xHoz9as01NVYP05B0Kzux/X5UhMn3qXsZDyWOSXkfSCAIrMBKmVVWbI0vUapdQ==",
       "dependencies": [
         "@aws-sdk/types",
         "@aws-sdk/xml-builder",
@@ -122,8 +122,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-env@3.972.13": {
-      "integrity": "sha512-6ljXKIQ22WFKyIs1jbORIkGanySBHaPPTOI4OxACP5WXgbcR0nDYfqNJfXEGwCK7IzHdNbCSFsNKKs0qCexR8Q==",
+    "@aws-sdk/credential-provider-env@3.972.14": {
+      "integrity": "sha512-PvnBY9rwBuLh9MEsAng28DG+WKl+txerKgf4BU9IPAqYI7FBIo1x6q/utLf4KLyQYgSy1TLQnbQuXx5xfBGASg==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/types",
@@ -132,8 +132,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-http@3.972.15": {
-      "integrity": "sha512-dJuSTreu/T8f24SHDNTjd7eQ4rabr0TzPh2UTCwYexQtzG3nTDKm1e5eIdhiroTMDkPEJeY+WPkA6F9wod/20A==",
+    "@aws-sdk/credential-provider-http@3.972.16": {
+      "integrity": "sha512-m/QAcvw5OahqGPjeAnKtgfWgjLxeWOYj7JSmxKK6PLyKp2S/t2TAHI6EELEzXnIz28RMgbQLukJkVAqPASVAGQ==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/types",
@@ -147,8 +147,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-ini@3.972.13": {
-      "integrity": "sha512-JKSoGb7XeabZLBJptpqoZIFbROUIS65NuQnEHGOpuT9GuuZwag2qciKANiDLFiYk4u8nSrJC9JIOnWKVvPVjeA==",
+    "@aws-sdk/credential-provider-ini@3.972.14": {
+      "integrity": "sha512-EGA7ufqNpZKZcD0RwM6gRDEQgwAf19wQ99R1ptdWYDJAnpcMcWiFyT0RIrgiZFLD28CwJmYjnra75hChnEveWA==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/credential-provider-env",
@@ -166,8 +166,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-login@3.972.13": {
-      "integrity": "sha512-RtYcrxdnJHKY8MFQGLltCURcjuMjnaQpAxPE6+/QEdDHHItMKZgabRe/KScX737F9vJMQsmJy9EmMOkCnoC1JQ==",
+    "@aws-sdk/credential-provider-login@3.972.14": {
+      "integrity": "sha512-P2kujQHAoV7irCTv6EGyReKFofkHCjIK+F0ZYf5UxeLeecrCwtrDkHoO2Vjsv/eRUumaKblD8czuk3CLlzwGDw==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/nested-clients",
@@ -179,8 +179,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-node@3.972.14": {
-      "integrity": "sha512-WqoC2aliIjQM/L3oFf6j+op/enT2i9Cc4UTxxMEKrJNECkq4/PlKE5BOjSYFcq6G9mz65EFbXJh7zOU4CvjSKQ==",
+    "@aws-sdk/credential-provider-node@3.972.15": {
+      "integrity": "sha512-59NBJgTcQ2FC94T+SWkN5UQgViFtrLnkswSKhG5xbjPAotOXnkEF2Bf0bfUV1F3VaXzqAPZJoZ3bpg4rr8XD5Q==",
       "dependencies": [
         "@aws-sdk/credential-provider-env",
         "@aws-sdk/credential-provider-http",
@@ -196,8 +196,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-process@3.972.13": {
-      "integrity": "sha512-rsRG0LQA4VR+jnDyuqtXi2CePYSmfm5GNL9KxiW8DSe25YwJSr06W8TdUfONAC+rjsTI+aIH2rBGG5FjMeANrw==",
+    "@aws-sdk/credential-provider-process@3.972.14": {
+      "integrity": "sha512-KAF5LBkJInUPaR9dJDw8LqmbPDRTLyXyRoWVGcJQ+DcN9rxVKBRzAK+O4dTIvQtQ7xaIDZ2kY7zUmDlz6CCXdw==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/types",
@@ -207,8 +207,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-sso@3.972.13": {
-      "integrity": "sha512-fr0UU1wx8kNHDhTQBXioc/YviSW8iXuAxHvnH7eQUtn8F8o/FU3uu6EUMvAQgyvn7Ne5QFnC0Cj0BFlwCk+RFw==",
+    "@aws-sdk/credential-provider-sso@3.972.14": {
+      "integrity": "sha512-LQzIYrNABnZzkyuIguFa3VVOox9UxPpRW6PL+QYtRHaGl1Ux/+Zi54tAVK31VdeBKPKU3cxqeu8dbOgNqy+naw==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/nested-clients",
@@ -220,8 +220,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/credential-provider-web-identity@3.972.13": {
-      "integrity": "sha512-a6iFMh1pgUH0TdcouBppLJUfPM7Yd3R9S1xFodPtCRoLqCz2RQFA3qjA8x4112PVYXEd4/pHX2eihapq39w0rA==",
+    "@aws-sdk/credential-provider-web-identity@3.972.14": {
+      "integrity": "sha512-rOwB3vXHHHnGvAOjTgQETxVAsWjgF61XlbGd/ulvYo7EpdXs8cbIHE3PGih9tTj/65ZOegSqZGFqLaKntaI9Kw==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/nested-clients",
@@ -259,8 +259,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/middleware-user-agent@3.972.15": {
-      "integrity": "sha512-ABlFVcIMmuRAwBT+8q5abAxOr7WmaINirDJBnqGY5b5jSDo00UMlg/G4a0xoAgwm6oAECeJcwkvDlxDwKf58fQ==",
+    "@aws-sdk/middleware-user-agent@3.972.16": {
+      "integrity": "sha512-AmVxtxn8ZkNJbuPu3KKfW9IkJgTgcEtgSwbo0NVcAb31iGvLgHXj2nbbyrUDfh2fx8otXmqL+qw1lRaTi+V3vA==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/types",
@@ -271,8 +271,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/nested-clients@3.996.3": {
-      "integrity": "sha512-AU5TY1V29xqwg/MxmA2odwysTez+ccFAhmfRJk+QZT5HNv90UTA9qKd1J9THlsQkvmH7HWTEV1lDNxkQO5PzNw==",
+    "@aws-sdk/nested-clients@3.996.4": {
+      "integrity": "sha512-NowB1HfOnWC4kwZOnTg8E8rSL0U+RSjSa++UtEV4ipoH6JOjMLnHyGilqwl+Pe1f0Al6v9yMkSJ/8Ot0f578CQ==",
       "dependencies": [
         "@aws-crypto/sha256-browser",
         "@aws-crypto/sha256-js",
@@ -324,8 +324,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/token-providers@3.999.0": {
-      "integrity": "sha512-cx0hHUlgXULfykx4rdu/ciNAJaa3AL5xz3rieCz7NKJ68MJwlj3664Y8WR5MGgxfyYJBdamnkjNSx5Kekuc0cg==",
+    "@aws-sdk/token-providers@3.1001.0": {
+      "integrity": "sha512-09XAq/uIYgeZhohuGRrR/R+ek3+ljFNdzWCXdqb9rlIERDjSfNiLjTtpHgSK1xTPmC5G4yWoEAyMfTXiggS6wA==",
       "dependencies": [
         "@aws-sdk/core",
         "@aws-sdk/nested-clients",
@@ -368,8 +368,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/util-user-agent-node@3.973.0": {
-      "integrity": "sha512-A9J2G4Nf236e9GpaC1JnA8wRn6u6GjnOXiTwBLA6NUJhlBTIGfrTy+K1IazmF8y+4OFdW3O5TZlhyspJMqiqjA==",
+    "@aws-sdk/util-user-agent-node@3.973.1": {
+      "integrity": "sha512-kmgbDqT7aCBEVrqESM2JUjbf0zhDUQ7wnt3q1RuVS+3mglrcfVb2bwkbmf38npOyyPGtQPV5dWN3m+sSFAVAgQ==",
       "dependencies": [
         "@aws-sdk/middleware-user-agent",
         "@aws-sdk/types",
@@ -378,8 +378,8 @@
         "tslib"
       ]
     },
-    "@aws-sdk/xml-builder@3.972.8": {
-      "integrity": "sha512-Ql8elcUdYCha83Ol7NznBsgN5GVZnv3vUd86fEc6waU6oUdY0T1O9NODkEEOS/Uaogr87avDrUC6DSeM4oXjZg==",
+    "@aws-sdk/xml-builder@3.972.9": {
+      "integrity": "sha512-ItnlMgSqkPrUfJs7EsvU/01zw5UeIb2tNPhD09LBLHbg+g+HDiKibSLwpkuz/ZIlz4F2IMn+5XgE4AK/pfPuog==",
       "dependencies": [
         "@smithy/types",
         "fast-xml-parser",
@@ -780,9 +780,13 @@
         "safe-buffer"
       ]
     },
-    "fast-xml-parser@5.3.6": {
-      "integrity": "sha512-QNI3sAvSvaOiaMl8FYU4trnEzCwiRr8XMWgAHzlrWpTSj+QaCSvOf1h82OEP1s4hiAXhnbXSyFWCf4ldZzZRVA==",
+    "fast-xml-builder@1.0.0": {
+      "integrity": "sha512-fpZuDogrAgnyt9oDDz+5DBz0zgPdPZz6D4IR7iESxRXElrlGTRkHJ9eEt+SACRJwT0FNFrt71DFQIUFBJfX/uQ=="
+    },
+    "fast-xml-parser@5.4.1": {
+      "integrity": "sha512-BQ30U1mKkvXQXXkAGcuyUA/GA26oEB7NzOtsxCDtyu62sjGw5QraKFhx2Em3WQNjPw9PG6MQ9yuIIgkSDfGu5A==",
       "dependencies": [
+        "fast-xml-builder",
         "strnum"
       ],
       "bin": true
@@ -872,7 +876,7 @@
     "dependencies": [
       "jsr:@std/crypto@1.0.5",
       "jsr:@std/path@1.1.4",
-      "npm:@aws-sdk/client-ssm@3.1000.0",
+      "npm:@aws-sdk/client-ssm@3.1001.0",
       "npm:@azure/msal-node@5.0.6",
       "npm:loglevel@1.9.2",
       "npm:p-throttle@8.1.0",
