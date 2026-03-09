@@ -24,18 +24,18 @@ jobs:
       - name: Checkout integration repo
         uses: actions/checkout@v4
 
-      - name: Read integrations-base version
+      - name: Read integration-base version
         id: core_version
         run: |
-          VERSION=$(grep -o 'integrations-base/v[0-9]*\.[0-9]*\.[0-9]*' deno.jsonc | head -1 | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*')
+          VERSION=$(grep -o 'integration-base/v[0-9]*\.[0-9]*\.[0-9]*' deno.jsonc | head -1 | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Checkout integrations-base
+      - name: Checkout integration-base
         uses: actions/checkout@v4
         with:
-          repository: hls/integrations-base
+          repository: hls/integration-base
           ref: ${{ steps.core_version.outputs.version }}
-          path: integrations-base
+          path: integration-base
 
       - name: Copy base template.yml
         run: cp integration-base/cloudformation/template.yml template.yml
