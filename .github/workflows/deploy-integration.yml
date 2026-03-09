@@ -33,7 +33,7 @@ jobs:
       - name: Checkout integration-base
         uses: actions/checkout@v4
         with:
-          repository: hls/integration-base
+          repository: hlsnate/integration-base
           ref: ${{ steps.core_version.outputs.version }}
           path: integration-base
 
