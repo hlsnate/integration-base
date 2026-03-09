@@ -29,7 +29,9 @@ jobs:
 
       - name: Read integrations-base version
         id: core_version
-        run: echo "version=$(cat .core-version)" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(grep -o 'integrations-base/v[0-9]*\.[0-9]*\.[0-9]*' deno.jsonc | head -1 | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Download base template.yml from integrations-base
         run: |
