@@ -1,0 +1,12 @@
+.env
+.cache
+.vscode-test
+.DS_Store
+*.swp
+
+.tmp/*
+!.tmp/.keep
+
+node_modules/
+build/
+.aws-sam/

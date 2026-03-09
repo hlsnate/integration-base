@@ -1,0 +1,30 @@
+{
+  "license": "MIT",
+  "tasks": {
+    "check": "deno fmt && deno lint && deno check && deno test --permit-no-files",
+    "clean": "rm -rf .aws-sam build"
+  },
+  "lock": {
+    "frozen": true
+  },
+  "minimumDependencyAge": "P5D", // security threshold in days that new dependency versions may be included
+  "imports": {
+    "@aws-sdk/client-ssm": "npm:@aws-sdk/client-ssm@3.1000.0",
+    "@azure/msal-node": "npm:@azure/msal-node@5.0.6",
+    "@std/crypto": "jsr:@std/crypto@1.0.5",
+    "@std/path": "jsr:@std/path@1.1.4",
+    "loglevel": "npm:loglevel@1.9.2",
+    "p-throttle": "npm:p-throttle@8.1.0",
+    "zod": "npm:zod@4.3.6"
+  },
+  "exclude": [".tmp"],
+  "vscode": {
+    "extensions": [
+      "denoland.vscode-deno"
+    ],
+    "settings": {
+      "deno.enable": true,
+      "deno.suggest.autoImports": true
+    }
+  }
+}
