@@ -1,4 +1,3 @@
-// integration-core/src/mod.ts
 export {
   addLogContext,
   default as log,
@@ -7,6 +6,7 @@ export {
 export { getAwsParams, getParam } from "./util/aws-params.ts";
 export { noWebhooksHandler, validateWebhookSignature } from "./util/webhook.ts";
 export { generateHMAC, verifyHMAC } from "./util/hmac.ts";
+export { timeDifference } from "./util/time-difference.ts";
 export type {
   ApiEvent,
   ApiResult,
