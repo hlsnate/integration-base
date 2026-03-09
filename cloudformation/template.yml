@@ -18,7 +18,7 @@ Parameters:
   LogLevel:
     Type: String
     Default: "info"
-    AllowedValues: [trace, debug, info, warn, error, silent]
+    AllowedValues: [trace, debug, info, warn, error]
     Description: "Lambda LOG_LEVEL environment variable"
 
   ScheduleEnabled:
