@@ -1,39 +1,47 @@
-name: Deploy - dev
+name: Deploy Integration (Reusable)
 
 on:
-  push:
-    branches:
-      - release/dev
-    paths-ignore:
-      - README.md
-      - docs/**
-      - events/**
-      - lefthook.yml
-      - .gitignore
-  workflow_dispatch: # enables manual trigger
+  workflow_call:
     inputs:
       environment:
-        description: "Environment to deploy to"
         required: true
-        default: dev
+        type: string
+      trigger_type:
+        required: false
+        type: string
+        default: "both"
+    secrets:
+      aws_role_arn:
+        required: true
 
 jobs:
-  deploy-dev:
+  deploy:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: ${{ inputs.environment }}
 
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - name: Checkout
+      - name: Checkout integration repo
         uses: actions/checkout@v4
+
+      - name: Read integrations-base version
+        id: core_version
+        run: echo "version=$(cat .core-version)" >> $GITHUB_OUTPUT
+
+      - name: Download base template.yml from integrations-base
+        run: |
+          curl -fsSL \
+            "https://raw.githubusercontent.com/hlsnate/integrations-base/${{ steps.core_version.outputs.version }}/cloudformation/template.yml" \
+            -o template.yml
+          echo "Using integrations-base ${{ steps.core_version.outputs.version }}"
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::FIXME:role/github-actions-dev-role
+          role-to-assume: ${{ secrets.aws_role_arn }}
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Setup SAM CLI
@@ -44,48 +52,43 @@ jobs:
       - name: SAM build
         run: sam build --use-container --no-cached
 
-        # SCHEDULE needs special quoting to handle whitespace
-      - name: SAM deploy - dev
+      - name: SAM deploy
         env:
-          ENVIRONMENT: dev
+          ENVIRONMENT: ${{ inputs.environment }}
+          TRIGGER_TYPE: ${{ inputs.trigger_type }}
           SCHEDULE: ${{ vars.SCHEDULE }}
           ALERT_EMAIL_OVERRIDE: ${{ vars.ALERT_EMAIL_OVERRIDE }}
           SCHEDULE_EVAL_PERIODS: ${{ vars.SCHEDULE_EVAL_PERIODS }}
           SCHEDULE_ALARM_WINDOW: ${{ vars.SCHEDULE_ALARM_WINDOW }}
-          # Optional alarms — set OPTIONAL_ALARM1_FILTER to enable alarm 1,
-          # OPTIONAL_ALARM2_FILTER to enable alarm 2
-          OPTIONAL_ALARM1_WINDOW: ${{ vars.OPTIONAL_ALARM1_WINDOW }}
-          OPTIONAL_ALARM2_WINDOW: ${{ vars.OPTIONAL_ALARM2_WINDOW }}
           OPTIONAL_ALARM1_FILTER: ${{ vars.OPTIONAL_ALARM1_FILTER }}
+          OPTIONAL_ALARM1_WINDOW: ${{ vars.OPTIONAL_ALARM1_WINDOW }}
           OPTIONAL_ALARM1_STATISTIC: ${{ vars.OPTIONAL_ALARM1_STATISTIC }}
           OPTIONAL_ALARM1_THRESHOLD: ${{ vars.OPTIONAL_ALARM1_THRESHOLD }}
           OPTIONAL_ALARM1_COMPARISON_OPERATOR: ${{ vars.OPTIONAL_ALARM1_COMPARISON_OPERATOR }}
           OPTIONAL_ALARM2_FILTER: ${{ vars.OPTIONAL_ALARM2_FILTER }}
+          OPTIONAL_ALARM2_WINDOW: ${{ vars.OPTIONAL_ALARM2_WINDOW }}
           OPTIONAL_ALARM2_STATISTIC: ${{ vars.OPTIONAL_ALARM2_STATISTIC }}
           OPTIONAL_ALARM2_THRESHOLD: ${{ vars.OPTIONAL_ALARM2_THRESHOLD }}
           OPTIONAL_ALARM2_COMPARISON_OPERATOR: ${{ vars.OPTIONAL_ALARM2_COMPARISON_OPERATOR }}
         run: |
-          # Required overrides are always included
           PARAM_OVERRIDES=(
-            "TriggerType=schedule"
+            "TriggerType=$TRIGGER_TYPE"
             "AlertTopicArn=/integrations/shared/AlertTopicArn"
             "Environment=$ENVIRONMENT"
           )
 
-          # Optional overrides are appended only when the variable is set and non-empty
           [ -n "$SCHEDULE" ]              && PARAM_OVERRIDES+=("ScheduleExpression='$SCHEDULE'")
           [ -n "$ALERT_EMAIL_OVERRIDE" ]  && PARAM_OVERRIDES+=("AlertEmailOverride=$ALERT_EMAIL_OVERRIDE")
           [ -n "$SCHEDULE_EVAL_PERIODS" ] && PARAM_OVERRIDES+=("ScheduleEvaluationPeriods=$SCHEDULE_EVAL_PERIODS")
           [ -n "$SCHEDULE_ALARM_WINDOW" ] && PARAM_OVERRIDES+=("ScheduleAlarmWindow=$SCHEDULE_ALARM_WINDOW")
 
-          # Filter patterns need quoting to preserve spaces and special characters
-          [ -n "$OPTIONAL_ALARM1_WINDOW" ] && PARAM_OVERRIDES+=("OptionalAlarm1Period=$OPTIONAL_ALARM1_WINDOW")
-          [ -n "$OPTIONAL_ALARM2_WINDOW" ] && PARAM_OVERRIDES+=("OptionalAlarm2Period=$OPTIONAL_ALARM2_WINDOW")
           [ -n "$OPTIONAL_ALARM1_FILTER" ]              && PARAM_OVERRIDES+=("OptionalAlarm1FilterPattern='$OPTIONAL_ALARM1_FILTER'")
+          [ -n "$OPTIONAL_ALARM1_WINDOW" ]              && PARAM_OVERRIDES+=("OptionalAlarm1Window=$OPTIONAL_ALARM1_WINDOW")
           [ -n "$OPTIONAL_ALARM1_STATISTIC" ]           && PARAM_OVERRIDES+=("OptionalAlarm1Statistic=$OPTIONAL_ALARM1_STATISTIC")
           [ -n "$OPTIONAL_ALARM1_THRESHOLD" ]           && PARAM_OVERRIDES+=("OptionalAlarm1Threshold=$OPTIONAL_ALARM1_THRESHOLD")
           [ -n "$OPTIONAL_ALARM1_COMPARISON_OPERATOR" ] && PARAM_OVERRIDES+=("OptionalAlarm1ComparisonOperator=$OPTIONAL_ALARM1_COMPARISON_OPERATOR")
           [ -n "$OPTIONAL_ALARM2_FILTER" ]              && PARAM_OVERRIDES+=("OptionalAlarm2FilterPattern='$OPTIONAL_ALARM2_FILTER'")
+          [ -n "$OPTIONAL_ALARM2_WINDOW" ]              && PARAM_OVERRIDES+=("OptionalAlarm2Window=$OPTIONAL_ALARM2_WINDOW")
           [ -n "$OPTIONAL_ALARM2_STATISTIC" ]           && PARAM_OVERRIDES+=("OptionalAlarm2Statistic=$OPTIONAL_ALARM2_STATISTIC")
           [ -n "$OPTIONAL_ALARM2_THRESHOLD" ]           && PARAM_OVERRIDES+=("OptionalAlarm2Threshold=$OPTIONAL_ALARM2_THRESHOLD")
           [ -n "$OPTIONAL_ALARM2_COMPARISON_OPERATOR" ] && PARAM_OVERRIDES+=("OptionalAlarm2ComparisonOperator=$OPTIONAL_ALARM2_COMPARISON_OPERATOR")

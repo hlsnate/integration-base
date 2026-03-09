@@ -1,0 +1,495 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "Integration Tooling base infrastructure — see app-template.yml for app-specific resources"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: "dev"
+    AllowedValues: [dev, staging, prod]
+    Description: "Environment name"
+
+  TriggerType:
+    Type: String
+    Default: "both"
+    AllowedValues: [webhook, schedule, both]
+    Description: "How to trigger the Lambda function"
+
+  ScheduleEnabled:
+    Type: String
+    Default: "ENABLED"
+    AllowedValues: [ENABLED, DISABLED]
+    Description: "Schedule state (only used if TriggerType includes 'schedule')"
+
+  # ── Schedule tuning ────────────────────────────────────────────────────────
+  ScheduleExpression:
+    Type: String
+    # NOTE: All EventBridge cron times are UTC
+    Default: "cron(0 5 * * ? *)" # midnight daily EST
+    Description: >
+      EventBridge schedule expression for the Lambda trigger.
+      Examples:
+        rate(1 hour)
+        cron(0 8-20 * * ? *)   — hourly 08:00–20:00 UTC
+        cron(15 1/6 * * ? *)   — every 6 hrs starting 01:15 UTC
+
+  ScheduleEvaluationPeriods:
+    Type: Number
+    Default: 1
+    Description: >
+      Number of consecutive ScheduleAlarmPeriod windows that must all show
+      no trigger before the alarm fires. Raise this to tolerate occasional
+      missed runs before alerting.
+      Examples: 1 (alert on first miss), 4 (tolerate 3 misses before alerting).
+
+  ScheduleAlarmWindow:
+    Type: String
+    Default: "Daily"
+    AllowedValues: [Hourly, HalfDaily, Daily, Disabled]
+    Description: >
+      Evaluation window for the missed-schedule alarm.
+        Hourly    — 3600 s  (use with hourly schedule expressions)
+        HalfDaily — 43200 s (use with 12-hour schedule expressions)
+        Daily     — 86400 s (use with daily schedule expressions)
+        Disabled  — no missed-schedule alarm is created
+
+  # ── Alerting ───────────────────────────────────────────────────────────────
+  AlertTopicArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/integrations/shared/AlertTopicArn"
+    Description: >
+      Resolved from SSM at deploy time. Always overridden by the deployment
+      workflow using /integrations/shared/AlertTopicArn.
+      Default is a fallback for manual console deploys only.
+
+  AlertEmailOverride:
+    Type: String
+    Default: ""
+    Description: >
+      When set, creates a local SNS topic and routes ALL alerts here
+      instead of the shared AlertTopicArn. Use during development.
+
+  # ── Optional Alarm 1 ───────────────────────────────────────────────────────
+  OptionalAlarm1FilterPattern:
+    Type: String
+    Default: ""
+    Description: "CloudWatch Logs filter pattern. Non-empty value enables this alarm."
+
+  OptionalAlarm1Window:
+    Type: String
+    Default: "Hourly"
+    AllowedValues: [Hourly, HalfDaily, Daily]
+    Description: "Evaluation window for optional alarm 1 — Hourly: 1 hr, HalfDaily: 12 hr, Daily: 24 hr"
+
+  OptionalAlarm1Statistic:
+    Type: String
+    Default: "Maximum"
+    AllowedValues: [Sum, Maximum]
+    Description: "Maximum fires if any single emission exceeded Threshold; Sum fires on cumulative total"
+
+  OptionalAlarm1Threshold:
+    Type: Number
+    Default: 1
+
+  OptionalAlarm1ComparisonOperator:
+    Type: String
+    Default: "GreaterThanThreshold"
+    AllowedValues:
+      - GreaterThanOrEqualToThreshold
+      - GreaterThanThreshold
+      - LessThanThreshold
+      - LessThanOrEqualToThreshold
+
+  # ── Optional Alarm 2 ───────────────────────────────────────────────────────
+  OptionalAlarm2FilterPattern:
+    Type: String
+    Default: ""
+    Description: "CloudWatch Logs filter pattern. Non-empty value enables this alarm."
+
+  OptionalAlarm2Window:
+    Type: String
+    Default: "Hourly"
+    AllowedValues: [Hourly, HalfDaily, Daily]
+    Description: "Evaluation window for optional alarm 2 — Hourly: 1 hr, HalfDaily: 12 hr, Daily: 24 hr"
+
+  OptionalAlarm2Statistic:
+    Type: String
+    Default: "Maximum"
+    AllowedValues: [Sum, Maximum]
+
+  OptionalAlarm2Threshold:
+    Type: Number
+    Default: 1
+
+  OptionalAlarm2ComparisonOperator:
+    Type: String
+    Default: "GreaterThanThreshold"
+    AllowedValues:
+      - GreaterThanOrEqualToThreshold
+      - GreaterThanThreshold
+      - LessThanThreshold
+      - LessThanOrEqualToThreshold
+
+Mappings:
+  AlarmWindowToSeconds:
+    Hourly: { Seconds: 3600 }
+    HalfDaily: { Seconds: 43200 }
+    Daily: { Seconds: 86400 }
+
+  EnvToRetention:
+    dev:
+      Days: 7
+    staging:
+      Days: 30
+    prod:
+      Days: 90
+
+Conditions:
+  CreateWebhook: !Or
+    - !Equals [!Ref TriggerType, "webhook"]
+    - !Equals [!Ref TriggerType, "both"]
+
+  CreateSchedule: !Or
+    - !Equals [!Ref TriggerType, "schedule"]
+    - !Equals [!Ref TriggerType, "both"]
+
+  # Avoids a permanently-firing alarm when schedule is intentionally disabled
+  MonitorSchedule: !And
+    - Condition: CreateSchedule
+    - !Equals [!Ref ScheduleEnabled, "ENABLED"]
+    - !Not [!Equals [!Ref ScheduleAlarmWindow, "Disabled"]]
+
+  UseLocalAlertTopic: !Not [!Equals [!Ref AlertEmailOverride, ""]]
+  CreateOptionalAlarm1: !Not [!Equals [!Ref OptionalAlarm1FilterPattern, ""]]
+  CreateOptionalAlarm2: !Not [!Equals [!Ref OptionalAlarm2FilterPattern, ""]]
+
+Resources:
+  IntegrationLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ParametersAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/integrations/${AWS::StackName}*"
+
+  IntegrationLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures: [x86_64]
+      Timeout: 300
+      MemorySize: 512
+      Role: !GetAtt IntegrationLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          PARAMS_NAME: !Sub "/integrations/${AWS::StackName}"
+          ENVIRONMENT: !Ref Environment
+          SERVICE_NAME: !Ref AWS::StackName
+          TRIGGER_TYPE: !Ref TriggerType
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+
+  IntegrationLambdaFunctionUrl:
+    Type: AWS::Lambda::Url
+    Condition: CreateWebhook
+    Properties:
+      TargetFunctionArn: !GetAtt IntegrationLambdaFunction.Arn
+      AuthType: NONE
+
+  IntegrationLambdaFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Condition: CreateWebhook
+    Properties:
+      FunctionName: !Ref IntegrationLambdaFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  LocalAlertTopic:
+    Type: AWS::SNS::Topic
+    Condition: UseLocalAlertTopic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-alerts"
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertEmailOverride
+
+  IntegrationScheduleRule:
+    Type: AWS::Events::Rule
+    Condition: CreateSchedule
+    Properties:
+      Description: !Sub "Scheduled trigger for ${AWS::StackName}"
+      ScheduleExpression: !Ref ScheduleExpression
+      State: !Ref ScheduleEnabled
+      Targets:
+        - Arn: !GetAtt IntegrationLambdaFunction.Arn
+          Id: ScheduleTarget
+          Input: !Sub |
+            {
+              "source": "eventbridge.schedule",
+              "service": "${AWS::StackName}"
+            }
+
+  IntegrationSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Condition: CreateSchedule
+    Properties:
+      FunctionName: !Ref IntegrationLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt IntegrationScheduleRule.Arn
+
+  # Explicit log group ensures MetricFilter deploys successfully on first deploy
+  # (Lambda only auto-creates it on first invocation)
+  IntegrationLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain # Don't destroy logs on stack delete
+    UpdateReplacePolicy: Retain # Don't destroy logs on stack delete
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${IntegrationLambdaFunction}"
+      RetentionInDays: !FindInMap [EnvToRetention, !Ref Environment, Days]
+
+  ErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref IntegrationLambdaLogGroup
+      # For stricter JSON field matching use: '{ $.level = "ERROR" }'
+      FilterPattern: '?"ERROR" ?"error" ?"Error"'
+      MetricTransformations:
+        - MetricNamespace: !Sub "Integrations/${AWS::StackName}"
+          MetricName: ErrorCount
+          MetricValue: "1"
+          DefaultValue: 0
+
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "ERROR logs detected in ${AWS::StackName}"
+      MetricName: ErrorCount
+      Namespace: !Sub "Integrations/${AWS::StackName}"
+      Statistic: Sum
+      Period: 3600 # 1 hour window
+      EvaluationPeriods: 1 # 1 bad hour triggers alarm
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+
+  # Uses built-in Lambda metrics — no log group or filter needed
+  ThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "Lambda throttling detected in ${AWS::StackName}"
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref IntegrationLambdaFunction
+      Statistic: Sum
+      Period: 3600 # 1 hour window
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+      # Notify on recovery
+      OKActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+
+  DurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "Lambda duration exceeds 80% of timeout in ${AWS::StackName}"
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref IntegrationLambdaFunction
+      Statistic: Maximum
+      Period: 3600 # 1 hour window
+      EvaluationPeriods: 1
+      Threshold: 240000 # 80% of 300s Timeout, in milliseconds
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+
+  ScheduleMissedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: MonitorSchedule
+    Properties:
+      AlarmDescription: !Sub "Scheduled rule did not fire in ${AWS::StackName}"
+      # AWS/Events TriggeredRules is used rather than AWS/Lambda Invocations because:
+      # - It is schedule-specific and won't be masked by webhook invocations
+      #   when TriggerType is "both"
+      # - It signals at the EventBridge level, upstream of Lambda execution
+      # Complements ErrorAlarm: that catches Lambda ran but failed;
+      # this catches Lambda never ran at all
+      MetricName: TriggeredRules
+      Namespace: AWS/Events
+      Dimensions:
+        - Name: RuleName
+          Value: !Ref IntegrationScheduleRule
+      Statistic: Sum
+      Period: !FindInMap [
+        AlarmWindowToSeconds,
+        !Ref ScheduleAlarmWindow,
+        Seconds,
+      ]
+      EvaluationPeriods: !Ref ScheduleEvaluationPeriods
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      # TreatMissingData: breaching is what makes this work —
+      # EventBridge only emits TriggeredRules when the rule actually fires,
+      # so an empty period means no trigger occurred
+      TreatMissingData: breaching
+      AlarmActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+      # Notify on recovery (avoids need to lookup when next expected run is if resolves before triage)
+      OKActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+
+  OptionalAlarm1MetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: CreateOptionalAlarm1
+    Properties:
+      LogGroupName: !Ref IntegrationLambdaLogGroup
+      FilterPattern: !Ref OptionalAlarm1FilterPattern
+      MetricTransformations:
+        - MetricNamespace: !Sub "Integrations/${AWS::StackName}"
+          MetricName: !Sub "${AWS::StackName}-optional-1-metric"
+          MetricValue: "1"
+          DefaultValue: 0
+
+  OptionalAlarm1:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateOptionalAlarm1
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-optional-1"
+      AlarmDescription: !Sub "${AWS::StackName} — optional alarm 1 (${OptionalAlarm1ComparisonOperator} ${OptionalAlarm1Threshold})"
+      MetricName: !Sub "${AWS::StackName}-optional-1-metric"
+      Namespace: !Sub "Integrations/${AWS::StackName}"
+      Statistic: !Ref OptionalAlarm1Statistic
+      Period: !FindInMap [
+        AlarmWindowToSeconds,
+        !Ref OptionalAlarm1Window,
+        Seconds,
+      ]
+      EvaluationPeriods: 1
+      Threshold: !Ref OptionalAlarm1Threshold
+      ComparisonOperator: !Ref OptionalAlarm1ComparisonOperator
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+
+  OptionalAlarm2MetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: CreateOptionalAlarm2
+    Properties:
+      LogGroupName: !Ref IntegrationLambdaLogGroup
+      FilterPattern: !Ref OptionalAlarm2FilterPattern
+      MetricTransformations:
+        - MetricNamespace: !Sub "Integrations/${AWS::StackName}"
+          MetricName: !Sub "${AWS::StackName}-optional-2-metric"
+          MetricValue: "1"
+          DefaultValue: 0
+
+  OptionalAlarm2:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateOptionalAlarm2
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-optional-2"
+      AlarmDescription: !Sub "${AWS::StackName} — optional alarm 2 (${OptionalAlarm2ComparisonOperator} ${OptionalAlarm2Threshold})"
+      MetricName: !Sub "${AWS::StackName}-optional-2-metric"
+      Namespace: !Sub "Integrations/${AWS::StackName}"
+      Statistic: !Ref OptionalAlarm2Statistic
+      Period: !FindInMap [
+        AlarmWindowToSeconds,
+        !Ref OptionalAlarm2Window,
+        Seconds,
+      ]
+      EvaluationPeriods: 1
+      Threshold: !Ref OptionalAlarm2Threshold
+      ComparisonOperator: !Ref OptionalAlarm2ComparisonOperator
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+
+  # ── App-specific resources (merged at deploy time) ─────────────────────────
+  # EffectiveAlertTopicArn resolves the conditional here so app-template.yml
+  # receives a plain string and doesn't need to re-declare the condition
+  AppStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./app-template.yml
+      Parameters:
+        StackName: !Ref AWS::StackName
+        LogGroupName: !Ref IntegrationLambdaLogGroup
+        EffectiveAlertTopicArn: !If [
+          UseLocalAlertTopic,
+          !Ref LocalAlertTopic,
+          !Ref AlertTopicArn,
+        ]
+
+Outputs:
+  ServiceName:
+    Value: !Ref AWS::StackName
+
+  FunctionName:
+    Value: !Ref IntegrationLambdaFunction
+
+  FunctionArn:
+    Value: !GetAtt IntegrationLambdaFunction.Arn
+
+  RoleName:
+    Value: !Ref IntegrationLambdaExecutionRole
+    Description: "IAM Role Name"
+
+  ParametersPath:
+    Value: !Sub "/integrations/${AWS::StackName}"
+
+  FunctionUrl:
+    Condition: CreateWebhook
+    Value: !GetAtt IntegrationLambdaFunctionUrl.FunctionUrl
+
+  ScheduleRuleName:
+    Condition: CreateSchedule
+    Value: !Ref IntegrationScheduleRule
+
+  ScheduleMissedAlarmName:
+    Condition: MonitorSchedule
+    Description: CloudWatch alarm for missed schedule detection
+    Value: !Ref ScheduleMissedAlarm
+
+  EffectiveAlertTopicArn:
+    Value: !If [UseLocalAlertTopic, !Ref LocalAlertTopic, !Ref AlertTopicArn]
+    Description: "SNS topic receiving alerts, local if AlertEmailOverride is set otherwise shared org topic"
+
+  AlertEmailOverrideAddress:
+    Condition: UseLocalAlertTopic
+    Description: Overrides org-shared AlertTopicArn notifications recipient
+    Value: !Ref AlertEmailOverride
+
+  OptionalAlarm1Name:
+    Condition: CreateOptionalAlarm1
+    Value: !Ref OptionalAlarm1
+
+  OptionalAlarm2Name:
+    Condition: CreateOptionalAlarm2
+    Value: !Ref OptionalAlarm2
